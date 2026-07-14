@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>仿 Windows 10 完整版系统</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Segoe UI",system-ui,-apple-system,sans-serif;user-select:none;}
+body{overflow:hidden;height:100vh;background:#0078d7;transition:background 0.3s;}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-thumb{background:#aaa;border-radius:4px;}
+
+/* 桌面 */
+#desktop{width:100%;height:calc(100vh - 40px);padding:24px;display:grid;grid-template-columns:repeat(auto-fill,86px);gap:16px;}
+.desktop-icon{width:86px;text-align:center;color:#fff;padding:6px;border-radius:4px;cursor:pointer;}
+.desktop-icon:hover{background:rgba(255,255,255,0.18);}
+.icon-img{font-size:42px;margin-bottom:6px;}
+
+/* 任务栏 */
+#taskbar{height:40px;width:100%;background:#191919;position:fixed;bottom:0;display:flex;align-items:center;z-index:9999;}
+#start-btn{width:48px;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;cursor:pointer;transition:background 0.15s;}
+#start-btn:hover{background:#303030;}
+.task-apps{display:flex;height:100%;gap:2px;}
+.task-item{height:100%;min-width:46px;padding:0 12px;color:#fff;display:flex;align-items:center;cursor:pointer;border-bottom:2px solid #0078d7;background:rgba(255,255,255,0.04);transition:0.15s;}
+.task-item.inactive{border-bottom:2px solid transparent;opacity:0.72;background:transparent;}
+.task-item:hover{background:#3a3a3a;}
+.task-right{margin-left:auto;color:#fff;padding:0 16px;font-size:13px;height:100%;display:flex;align-items:center;gap:14px;}
+
+/* 开始菜单 */
+#start-menu{width:390px;height:520px;background:#1f1f1f;position:fixed;bottom:40px;left:0;display:none;padding:12px;color:#fff;z-index:9998;box-shadow:0 0 24px #0006;overflow-y:auto;}
+.start-title{font-size:16px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #444;}
+.start-app-item{padding:9px 12px;cursor:pointer;border-radius:3px;margin:3px 0;display:flex;align-items:center;gap:10px;}
+.start-app-item:hover{background:#333;}
+
+/* 窗口通用 */
+.window{position:absolute;width:820px;height:540px;background:#fff;box-shadow:0 6px 26px rgba(0,0,0,0.35);display:none;flex-direction:column;z-index:100;border:1px solid #ccc;overflow:hidden;transition:opacity 0.15s ease;}
+.window-top{height:34px;background:#0078d7;display:flex;align-items:center;padding:0 10px;color:#fff;cursor:move;}
+.window-title{flex:1;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.window-controls{display:flex;height:100%;}
+.win-btn{width:48px;height:100%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:background 0.12s;}
+.win-btn:hover{background:rgba(255,255,255,0.18);}
+.win-btn.close:hover{background:#e81123;}
+.win-content{flex:1;overflow:auto;padding:10px;color:#222;background:#fff;}
+.window.minimized{opacity:0;pointer-events:none;}
+
+/* 右键菜单 */
+.context-menu{position:fixed;width:190px;background:#fff;border:1px solid #d0d0d0;box-shadow:3px 3px 12px #0004;display:none;z-index:99999;}
+.ctx-item{padding:9px 14px;cursor:pointer;font-size:14px;}
+.ctx-item:hover{background:#0078d7;color:#fff;}
+
+/* 通用组件样式 */
+textarea,input[type="text"],input[type="number"]{border:1px solid #ccc;padding:6px;font-size:14px;outline:#0078d7 2px solid transparent;border-radius:3px;}
+textarea:focus,input:focus{outline:#0078d7 2px solid;}
+button{padding:6px 12px;background:#0078d7;color:#fff;border:none;border-radius:3px;cursor:pointer;}
+button:hover{background:#0067c0;}
+.setting-row{margin:14px 0;display:flex;align-items:center;gap:10px;}
+.wallpaper-option{width:60px;height:40px;border:1px solid #888;cursor:pointer;}
+.app-grid{display:grid;grid-template-columns:repeat(4,100px);gap:12px;margin-top:10px;}
+.app-card{border:1px solid #ddd;padding:8px;text-align:center;border-radius:4px;cursor:pointer;}
+.app-card:hover{background:#f0f7ff;}
+.calc-num{width:60px;height:60px;font-size:20px;margin:3px;}
+.music-item{padding:6px;border-bottom:1px solid #eee;cursor:pointer;}
+.music-item:hover{background:#f2f2f2;}
+.terminal{background:#000;color:#0f0;padding:10px;font-family:Consolas,monospace;height:100%;white-space:pre-wrap;}
+#saveModal{position:fixed;width:320px;background:#fff;border:1px solid #999;box-shadow:0 0 20px #0005;padding:16px;z-index:10000;display:none;}
+.modal-title{font-size:15px;margin-bottom:10px;font-weight:bold;}
+</style>
+</head>
+<body>
+<!-- 保存弹窗（记事本） -->
+<div id="saveModal">
+<div class="modal-title">保存文件</div>
+<input type="text" id="saveFileName" placeholder="文件名.txt" style="width:100%;margin-bottom:10px;">
+<div style="display:flex;gap:8px;justify-content:flex-end;">
+<button id="confirmSave">保存</button>
+<button id="cancelSave">取消</button>
+</div>
+</div>
+
+<!-- 桌面 -->
+<div id="desktop"></div>
+
+<!-- 开始菜单 -->
+<div id="start-menu">
+<div class="start-title">所有应用</div>
+<div id="startAppList"></div>
+</div>
+
+<!-- 任务栏 -->
+<div id="taskbar">
+<div id="start-btn">⊞</div>
+<div class="task-apps" id="taskApps"></div>
+<div class="task-right">
+<span id="timeBox">00:00</span>
+</div>
+</div>
+
+<!-- 窗口容器 -->
+<div id="windowsBox"></div>
+
+<!-- 任务栏右键菜单 -->
+<div class="context-menu" id="taskCtx">
+<div class="ctx-item" data-act="min">最小化窗口</div>
+<div class="ctx-item" data-act="max">最大化</div>
+<div class="ctx-item" data-act="close">关闭应用</div>
+</div>
+
+<script>
+// 全局数据
+const windows = {};
+let zIndexNum = 100;
+let dragTarget = null, dragOffsetX = 0, dragOffsetY = 0;
+let currentSaveApp = null;
+
+// 应用完整配置（全部带功能界面）
+const appConfig = {
+notepad:{
+title:"记事本",icon:"📝",w:640,h:480,
+html:`
+<div style="display:flex;gap:8px;margin-bottom:8px;">
+<button id="noteNew">新建</button>
+<button id="noteSave">保存</button>
+<button id="noteSaveAs">另存为</button>
+</div>
+<textarea id="noteText" style="width:100%;height:calc(100% - 50px);resize:none;"></textarea>
+`,
+init:function(win){
+const key = "notepad_data";
+const textarea = win.querySelector("#noteText");
+// 读取本地缓存
+if(localStorage.getItem(key)) textarea.value = localStorage.getItem(key);
+// 实时自动缓存
+textarea.oninput = ()=>localStorage.setItem(key,textarea.value);
+win.querySelector("#noteNew").onclick = ()=>textarea.value = "";
+win.querySelector("#noteSave").onclick = ()=>{
+if(!textarea.value) return alert("内容不能为空");
+downloadFile("笔记.txt",textarea.value);
+};
+win.querySelector("#noteSaveAs").onclick = ()=>{
+currentSaveApp = textarea.value;
+document.getElementById("saveModal").style.display = "block";
+document.getElementById("saveFileName").focus();
+};
+}
+},
+calc:{
+title:"计算器",icon:"🔢",w:320,h:460,
+html:`
+<input id="calcInput" style="width:100%;height:50px;font-size:22px;text-align:right;" readonly>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);margin-top:8px;">
+<button class="calc-num">7</button><button class="calc-num">8</button><button class="calc-num">9</button><button class="calc-num">/</button>
+<button class="calc-num">4</button><button class="calc-num">5</button><button class="calc-num">6</button><button class="calc-num">*</button>
+<button class="calc-num">1</button><button class="calc-num">2</button><button class="calc-num">3</button><button class="calc-num">-</button>
+<button class="calc-num">0</button><button class="calc-num">.</button><button class="calc-num">C</button><button class="calc-num">+</button>
+<button class="calc-num" style="grid-column:span 4;">=</button>
+</div>
+`,
+init:function(win){
+const inp = win.querySelector("#calcInput");
+const btns = win.querySelectorAll(".calc-num");
+let exp = "";
+btns.forEach(b=>{
+b.onclick = ()=>{
+const val = b.innerText;
+if(val === "C"){exp = "";inp.value = "";}
+else if(val === "="){
+try{inp.value = eval(exp);}catch{e=>inp.value="错误";exp="";}
+}else{exp+=val;inp.value = exp;}
+}
+})
+}
+},
+paint:{
+title:"画图工具",icon:"🎨",w:760,h:520,
+html:`
+<div style="display:flex;gap:8px;margin-bottom:8px;">
+<button id="pen">画笔</button>
+<button id="eraser">橡皮</button>
+<input type="color" id="colorPick" value="#000000">
+<input type="range" id="lineWidth" min="1" max="30" value="5">
+<button id="clearCanvas">清空画布</button>
+</div>
+<canvas id="paintCanvas" style="border:1px solid #ccc;width:100%;height:calc(100% - 70px);"></canvas>
+`,
+init:function(win){
+const canvas = win.querySelector("#paintCanvas");
+const ctx = canvas.getContext("2d");
+canvas.width = canvas.offsetWidth;
+canvas.height = canvas.offsetHeight;
+let draw = false,mode="pen",color="#000",lineW=5;
+function redraw(){
+ctx.lineCap = "round";
+ctx.lineJoin = "round";
+}
+win.querySelector("#pen").onclick = ()=>mode="pen";
+win.querySelector("#eraser").onclick = ()=>mode="eraser";
+win.querySelector("#colorPick").oninput = e=>color=e.target.value;
+win.querySelector("#lineWidth").oninput = e=>lineW=+e.target.value;
+win.querySelector("#clearCanvas").onclick = ()=>ctx.clearRect(0,0,canvas.width,canvas.height);
+canvas.onmousedown = e=>{draw=true;redraw();ctx.beginPath();ctx.moveTo(e.offsetX,e.offsetY);}
+canvas.onmousemove = e=>{
+if(!draw)return;
+ctx.lineWidth = lineW;
+ctx.strokeStyle = mode=="eraser"?"#fff":color;
+ctx.lineTo(e.offsetX,e.offsetY);ctx.stroke();
+}
+canvas.onmouseup = ()=>draw=false;
+canvas.onmouseleave = ()=>draw=false;
+}
+},
+gallery:{
+title:"相册",icon:"🖼️",w:780,h:500,
+html:`
+<div class="app-grid">
+<div class="app-card">风景1</div>
+<div class="app-card">城市夜景</div>
+<div class="app-card">人物照片</div>
+<div class="app-card">动物</div>
+<div class="app-card">桌面截图</div>
+<div class="app-card">文档图片</div>
+<div class="app-card">壁纸合集</div>
+<div class="app-card">空白相册</div>
+</div>
+<p style="margin-top:16px;color:#666;">点击图片卡片预览大图</p>
+`,
+init:function(win){
+win.querySelectorAll(".app-card").forEach(card=>{
+card.onclick = ()=>alert("预览："+card.innerText);
+})
+}
+},
+terminal:{
+title:"终端",icon:"⌨️",w:700,h:460,
+html:`
+<div class="terminal" id="termBox">C:\\Users\\User> </div>
+<input id="termInput" style="width:100%;margin-top:8px;" placeholder="输入命令，支持 ls / cls / help / date">
+`,
+init:function(win){
+const box = win.querySelector("#termBox");
+const inp = win.querySelector("#termInput");
+inp.onkeydown = e=>{
+if(e.key!=="Enter")return;
+const cmd = inp.value.trim();
+let out = "";
+if(cmd==="cls"){box.innerText="C:\\Users\\User> ";inp.value="";return;}
+if(cmd==="help")out = "可用命令：cls 清屏 | help 帮助 | date 时间 | ls 文件列表";
+else if(cmd==="date")out = new Date().toString();
+else if(cmd==="ls")out = "桌面 文档 下载 图片 音乐";
+else if(cmd)out = `未知命令: ${cmd}`;
+box.innerText += out + "\nC:\\Users\\User> ";
+inp.value = "";
+box.scrollTop = box.scrollHeight;
+}
+}
+},
+edge:{
+title:"Edge浏览器",icon:"🌐",w:980,h:620,
+html:`
+<div style="display:flex;gap:8px;margin-bottom:10px;">
+<button>←</button><button>→</button><button>刷新</button>
+<input type="text" style="flex:1;padding:6px;" value="仿系统内置浏览器">
+<button>访问</button>
+</div>
+<div style="padding:12px;background:#f8f8f8;height:calc(100% - 80px);">
+<h3>欢迎使用内置浏览器</h3>
+<p>仅模拟页面框架，无真实联网功能</p>
+<ul style="margin-top:10px;">
+<li>本地文档浏览</li>
+<li>系统帮助页面</li>
+<li>壁纸资源页</li>
+</ul>
+</div>
+`,
+init:function(win){}
+},
+explorer:{
+title:"文件资源管理器",icon:"📁",w:840,h:540,
+html:`
+<div style="display:flex;gap:10px;height:calc(100% - 10px);">
+<div style="width:160px;border-right:1px solid #ddd;padding:8px;">
+<p>快速访问</p>
+<p style="margin-top:8px;">桌面</p>
+<p>文档</p>
+<p>下载</p>
+<p>图片</p>
+<p>音乐</p>
+</div>
+<div style="flex:1;padding:8px;">
+<div class="app-grid">
+<div class="app-card">新建文件夹</div>
+<div class="app-card">笔记.txt</div>
+<div class="app-card">绘图画布</div>
+<div class="app-card">截图.png</div>
+</div>
+</div>
+</div>
+`,
+init:function(win){}
+},
+settings:{
+title:"系统设置",icon:"⚙️",w:740,h:500,
+html:`
+<div style="display:flex;height:100%;">
+<div style="width:160px;border-right:1px solid #ddd;padding:8px;">
+<p class="setTab" data-tab="wall">个性化壁纸</p>
+<p class="setTab" data-tab="theme">主题颜色</p>
+<p class="setTab" data-tab="window">窗口设置</p>
+<p class="setTab" data-tab="time">时间格式</p>
+<p class="setTab" data-tab="about">关于系统</p>
+</div>
+<div style="flex:1;padding:12px;" id="setContent"></div>
+</div>
+`,
+init:function(win){
+const content = win.querySelector("#setContent");
+const tabs = win.querySelectorAll(".setTab");
+const wallList = ["#0078d7","#242424","#34495e","#27ae60","#8e44ad"];
+function renderTab(tab){
+if(tab=="wall"){
+let html = "<h3>桌面壁纸</h3><div style='display:flex;gap:8px;margin:10px 0;'>";
+wallList.forEach(c=>html+=`<div class="wallpaper-option" style="background:${c}" data-col="${c}"></div>`);
+html+="</div><p>点击色块切换桌面背景</p>";
+content.innerHTML = html;
+win.querySelectorAll(".wallpaper-option").forEach(d=>{
+d.onclick = ()=>{
+document.body.style.background = d.dataset.col;
+localStorage.setItem("sys_wall",d.dataset.col);
+}
+})
+}else if(tab=="theme"){
+content.innerHTML = `
+<h3>窗口标题栏颜色</h3>
+<div class="setting-row">
+<label>自定义颜色：</label>
+<input type="color" id="themeCol" value="#0078d7">
+</div>
+<button id="saveTheme">应用主题</button>
+`;
+win.querySelector("#saveTheme").onclick = ()=>{
+const c = win.querySelector("#themeCol").value;
+document.querySelectorAll(".window-top").forEach(t=>t.style.background = c);
+localStorage.setItem("sys_theme",c);
+}
+}else if(tab=="window"){
+content.innerHTML = `
+<h3>窗口透明度</h3>
+<div class="setting-row">
+<input type="range" id="winOpacity" min="0.5" max="1" step="0.05" value="1">
+<span id="opVal">100%</span>
+</div>
+<button id="applyOp">应用</button>
+`;
+const opSlider = win.querySelector("#winOpacity");
+opSlider.oninput = ()=>win.querySelector("#opVal").innerText = Math.round(opSlider.value*100)+"%";
+win.querySelector("#applyOp").onclick = ()=>{
+const val = opSlider.value;
+document.querySelectorAll(".window").forEach(w=>w.style.opacity = val);
+localStorage.setItem("sys_op",val);
+}
+}else if(tab=="time"){
+content.innerHTML = `
+<h3>时间显示</h3>
+<p>当前系统时间自动更新</p>
+<p style="margin-top:8px;">24小时制默认开启</p>
+`;
+}else if(tab=="about"){
+content.innerHTML = `
+<h3>仿 Windows 10 网页系统</h3>
+<p>版本 2.0 完整版</p>
+<p style="margin-top:8px;">纯HTML/CSS/JS实现，本地存储持久化</p>
+<p>内置记事本、计算器、画图、终端、浏览器、相册等应用</p>
+`;
+}
+}
+tabs.forEach(t=>t.onclick = ()=>renderTab(t.dataset.tab));
+renderTab("wall");
+// 读取本地配置
+if(localStorage.getItem("sys_wall")) document.body.style.background = localStorage.getItem("sys_wall");
+if(localStorage.getItem("sys_theme")){
+document.querySelectorAll(".window-top").forEach(t=>t.style.background = localStorage.getItem("sys_theme"));
+}
+if(localStorage.getItem("sys_op")){
+document.querySelectorAll(".window").forEach(w=>w.style.opacity = localStorage.getItem("sys_op"));
+}
+}
+},
+music:{
+title:"音乐播放器",icon:"🎵",w:520,h:400,
+html:`
+<h3>本地歌单</h3>
+<div class="music-list" style="margin:10px 0;height:240px;overflow-y:auto;">
+<div class="music-item">轻音乐 - 晨间微风</div>
+<div class="music-item">纯钢琴 - 静谧夜晚</div>
+<div class="music-item">古风纯乐 - 山河序</div>
+<div class="music-item">电子纯音 - 星轨</div>
+</div>
+<div style="display:flex;gap:8px;margin-top:8px;">
+<button id="playBtn">播放</button>
+<button id="pauseBtn">暂停</button>
+<button id="stopBtn">停止</button>
+</div>
+`,
+init:function(win){
+let playing = false;
+win.querySelectorAll(".music-item").forEach(m=>m.onclick = ()=>alert("正在加载："+m.innerText));
+win.querySelector("#playBtn").onclick = ()=>{playing=true;alert("开始播放");}
+win.querySelector("#pauseBtn").onclick = ()=>{playing=false;alert("已暂停");}
+win.querySelector("#stopBtn").onclick = ()=>{playing=false;alert("播放停止");}
+}
+},
+calendar:{
+title:"日历",icon:"📅",w:460,h:440,
+html:`
+<div style="text-align:center;">
+<h3 id="calTitle"></h3>
+<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px;">
+<div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div><div>日</div>
+<div id="calDays"></div>
+</div>
+</div>
+`,
+init:function(win){
+const now = new Date();
+const y = now.getFullYear(),m=now.getMonth();
+win.querySelector("#calTitle").innerText = y+"年"+(m+1)+"月";
+const box = win.querySelector("#calDays");
+box.style.gridColumn="span 7";
+box.style.display="grid";
+box.style.gridTemplateColumns="repeat(7,1fr)";
+box.style.gap="6px";
+const first = new Date(y,m,1).getDay()||7;
+const last = new Date(y,m+1,0).getDate();
+let html = "";
+for(let i=1;i<first;i++) html+="<div></div>";
+for(let d=1;d<=last;d++) html+=`<div style="padding:6px;text-align:center;border:1px solid #eee;">${d}</div>`;
+box.innerHTML = html;
+}
+}
+};
+
+// 初始化桌面图标、开始菜单
+function initDesktop(){
+const deskBox = document.getElementById("desktop");
+const startList = document.getElementById("startAppList");
+Object.keys(appConfig).forEach(id=>{
+const app = appConfig[id];
+// 桌面图标
+const icon = document.createElement("div");
+icon.className = "desktop-icon";
+icon.dataset.app = id;
+icon.innerHTML = `<div class="icon-img">${app.icon}</div><div>${app.title}</div>`;
+deskBox.appendChild(icon);
+// 开始菜单项
+const startItem = document.createElement("div");
+startItem.className = "start-app-item";
+startItem.dataset.app = id;
+startItem.innerHTML = `<span style="font-size:20px;">${app.icon}</span>${app.title}`;
+startList.appendChild(startItem);
+})
+// 点击打开应用
+document.querySelectorAll(".desktop-icon,.start-app-item").forEach(el=>{
+el.onclick = e=>{e.stopPropagation();openApp(el.dataset.app);}
+})
+}
+
+// 文件下载工具（记事本保存）
+function downloadFile(name,text){
+const blob = new Blob([text],{type:"text/plain"});
+const a = document.createElement("a");
+a.href = URL.createObjectURL(blob);
+a.download = name;
+a.click();
+URL.revokeObjectURL(a.href);
+}
+
+// 保存弹窗逻辑
+document.getElementById("confirmSave").onclick = ()=>{
+const fn = document.getElementById("saveFileName").value.trim()||"笔记.txt";
+downloadFile(fn,currentSaveApp);
+document.getElementById("saveModal").style.display = "none";
+}
+document.getElementById("cancelSave").onclick = ()=>{
+document.getElementById("saveModal").style.display = "none";
+}
+document.addEventListener("click",e=>{
+if(!document.getElementById("saveModal").contains(e.target)){
+document.getElementById("saveModal").style.display = "none";
+}
+})
+
+// 更新任务栏时间
+function updateTime(){
+const d = new Date();
+const h = String(d.getHours()).padStart(2,"0");
+const m = String(d.getMinutes()).padStart(2,"0");
+document.getElementById("timeBox").innerText = h+":"+m;
+}
+setInterval(updateTime,1000);
+updateTime();
+
+// 开始菜单开关
+document.getElementById("start-btn").onclick = e=>{
+e.stopPropagation();
+const m = document.getElementById("start-menu");
+m.style.display = m.style.display=="block"?"none":"block";
+}
+document.body.onclick = ()=>{
+document.getElementById("start-menu").style.display = "none";
+document.getElementById("taskCtx").style.display = "none";
+}
+
+// 打开应用
+function openApp(appId){
+const cfg = appConfig[appId];
+if(windows[appId]){focusWindow(appId);return;}
+zIndexNum++;
+const win = document.createElement("div");
+win.className = "window";
+win.dataset.app = appId;
+win.style.left = 60 + Object.keys(windows).length*32 + "px";
+win.style.top = 60 + Object.keys(windows).length*32 + "px";
+win.style.width = cfg.w + "px";
+win.style.height = cfg.h + "px";
+win.style.zIndex = zIndexNum;
+win.style.display = "flex";
+win.innerHTML = `
+<div class="window-top">
+<span class="window-title">${cfg.icon} ${cfg.title}</span>
+<div class="window-controls">
+<div class="win-btn min">─</div>
+<div class="win-btn max">□</div>
+<div class="win-btn close">×</div>
+</div>
+</div>
+<div class="win-content">${cfg.html}</div>
+`;
+document.getElementById("windowsBox").appendChild(win);
+windows[appId] = win;
+createTaskItem(appId);
+bindWindowEvent(win,appId);
+// 执行应用初始化功能
+if(cfg.init) cfg.init(win);
+}
+
+// 创建任务栏图标
+function createTaskItem(appId){
+const cfg = appConfig[appId];
+const taskBox = document.getElementById("taskApps");
+const t = document.createElement("div");
+t.className = "task-item";
+t.dataset.app = appId;
+t.innerText = cfg.icon+" "+cfg.title;
+t.onclick = e=>{
+e.stopPropagation();
+const w = windows[appId];
+if(w.style.display==="none"){w.style.display="flex";focusWindow(appId);}
+else if(getActiveApp()===appId){w.style.display="none";refreshTaskActive();}
+else focusWindow(appId);
+}
+// 任务栏右键菜单
+t.oncontextmenu = e=>{
+e.preventDefault();
+e.stopPropagation();
+const ctx = document.getElementById("taskCtx");
+ctx.style.left = e.clientX+"px";
+ctx.style.top = e.clientY+"px";
+ctx.style.display = "block";
+ctx.dataset.targetApp = appId;
+}
+taskBox.appendChild(t);
+refreshTaskActive();
+}
+
+// 任务栏右键操作
+document.querySelectorAll("#taskCtx .ctx-item").forEach(item=>{
+item.onclick = e=>{
+const act = item.dataset.act;
+const appId = document.getElementById("taskCtx").dataset.targetApp;
+const win = windows[appId];
+if(act==="min") win.style.display = "none";
+if(act==="max") toggleMax(win);
+if(act==="close") closeApp(appId);
+document.getElementById("taskCtx").style.display = "none";
+refreshTaskActive();
+}
+})
+
+// 获取顶层窗口
+function getActiveApp(){
+let maxZ = 99,active = null;
+Object.keys(windows).forEach(id=>{
+const z = +windows[id].style.zIndex;
+if(z>maxZ && windows[id].style.display!=="none"){maxZ=z;active=id;}
+})
+return active;
+}
+
+// 置顶窗口
+function focusWindow(appId){
+zIndexNum++;
+const w = windows[appId];
+w.style.zIndex = zIndexNum;
+w.style.display = "flex";
+refreshTaskActive();
+}
+
+// 更新任务栏激活状态
+function refreshTaskActive(){
+const active = getActiveApp();
+document.querySelectorAll(".task-item").forEach(t=>{
+if(t.dataset.app===active) t.classList.remove("inactive");
+else t.classList.add("inactive");
+})
+}
+
+// 关闭应用
+function closeApp(appId){
+windows[appId].remove();
+delete windows[appId];
+document.querySelectorAll(`.task-item[data-app="${appId}"]`).forEach(t=>t.remove());
+refreshTaskActive();
+}
+
+let maxStore = {};
+function toggleMax(win){
+const aid = win.dataset.app;
+if(!maxStore[aid]){
+maxStore[aid] = {
+l:win.style.left,t:win.style.top,w:win.style.width,h:win.style.height
+};
+win.style.left = "0";
+win.style.top = "0";
+win.style.width = "100%";
+win.style.height = "calc(100vh - 40px)";
+}else{
+const s = maxStore[aid];
+win.style.left = s.l;win.style.top = s.t;
+win.style.width = s.w;win.style.height = s.h;
+delete maxStore[aid];
+}
+}
+
+// 窗口绑定拖拽、最小化、最大化、关闭
+function bindWindowEvent(win,appId){
+const topBar = win.querySelector(".window-top");
+const minBtn = win.querySelector(".min");
+const maxBtn = win.querySelector(".max");
+const closeBtn = win.querySelector(".close");
+win.onmousedown = ()=>focusWindow(appId);
+// 流畅拖拽
+topBar.onmousedown = e=>{
+dragTarget = win;
+dragOffsetX = e.clientX - win.offsetLeft;
+dragOffsetY = e.clientY - win.offsetTop;
+focusWindow(appId);
+document.body.style.cursor = "move";
+};
+minBtn.onclick = e=>{e.stopPropagation();win.style.display = "none";refreshTaskActive();}
+maxBtn.onclick = e=>{e.stopPropagation();toggleMax(win);}
+closeBtn.onclick = e=>{e.stopPropagation();closeApp(appId);}
+}
+
+// 全局流畅拖拽
+document.onmousemove = e=>{
+if(!dragTarget) return;
+requestAnimationFrame(()=>{
+dragTarget.style.left = (e.clientX - dragOffsetX)+"px";
+dragTarget.style.top = (e.clientY - dragOffsetY)+"px";
+})
+}
+document.onmouseup = ()=>{dragTarget=null;document.body.style.cursor="default";}
+
+// 页面加载初始化
+window.onload = ()=>{
+initDesktop();
+}
+</script>
+</body>
+</html>
