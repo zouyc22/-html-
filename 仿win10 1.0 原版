@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows 10 仿系统 - 应用保护版</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Segoe UI", sans-serif; user-select: none; }
+        body { overflow: hidden; height: 100vh; background: #0078d7; }
+
+        /* 桌面区域 */
+        #desktop { width: 100%; height: calc(100vh - 40px); padding: 20px; display: grid; grid-template-columns: repeat(auto-fill, 80px); gap: 10px; }
+        .desktop-icon { width: 80px; text-align: center; color: #fff; cursor: pointer; padding: 5px; border-radius: 4px; }
+        .desktop-icon:hover { background: rgba(255,255,255,0.2); }
+        .icon-img { font-size: 40px; margin-bottom: 6px; }
+
+        /* 任务栏 */
+        #taskbar { height: 40px; width: 100%; background: #1f1f1f; position: fixed; bottom: 0; display: flex; align-items: center; z-index: 9999; }
+        #start-btn { width: 50px; height: 100%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; cursor: pointer; }
+        #start-btn:hover { background: #333; }
+        .task-apps { display: flex; height: 100%; }
+        .task-item { height: 100%; min-width: 40px; padding: 0 10px; color: #fff; display: flex; align-items: center; cursor: pointer; border-bottom: 2px solid #0078d7; }
+        .task-item.inactive { border-bottom: 2px solid transparent; opacity: 0.7; }
+        .task-item:hover { background: #444; }
+        .task-right { margin-left: auto; color: #fff; padding: 0 15px; font-size: 13px; height: 100%; display: flex; align-items: center; gap: 12px; }
+
+        /* 开始菜单 */
+        #start-menu { width: 380px; height: 500px; background: #1f1f1f; position: fixed; bottom: 40px; left: 0; display: none; padding: 10px; color: #fff; z-index: 9998; }
+        .start-app-item { padding: 8px 12px; cursor: pointer; border-radius: 2px; margin: 4px 0; }
+        .start-app-item:hover { background: #333; }
+
+        /* 窗口容器 */
+        .window { position: absolute; width: 800px; height: 500px; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.4); display: none; flex-direction: column; z-index: 100; }
+        .window-top { height: 32px; background: #0078d7; display: flex; align-items: center; padding: 0 10px; color: #fff; cursor: move; }
+        .window-title { flex: 1; font-size: 14px; }
+        .window-controls { display: flex; height: 100%; }
+        .win-btn { width: 46px; height: 100%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; }
+        .win-btn:hover { background: rgba(255,255,255,0.2); }
+        .win-btn.close { background: #e81123; pointer-events: none; opacity: 0.4; }
+        .win-btn.close:hover { background: #e81123; }
+        .win-content { flex: 1; overflow: auto; padding: 10px; color: #333; }
+
+        /* 右键菜单 */
+        .context-menu { position: fixed; width: 180px; background: #fff; border: 1px solid #ccc; box-shadow: 2px 2px 8px #0003; display: none; z-index: 99999; }
+        .ctx-item { padding: 8px 12px; cursor: pointer; }
+        .ctx-item:hover { background: #0078d7; color: white; }
+    </style>
+</head>
+<body>
+    <!-- 桌面 -->
+    <div id="desktop">
+        <div class="desktop-icon" data-app="notepad">
+            <div class="icon-img">📝</div>
+            <div>记事本</div>
+        </div>
+        <div class="desktop-icon" data-app="browser">
+            <div class="icon-img">🌐</div>
+            <div>Edge浏览器</div>
+        </div>
+        <div class="desktop-icon" data-app="file">
+            <div class="icon-img">📁</div>
+            <div>文件资源管理器</div>
+        </div>
+        <div class="desktop-icon" data-app="setting">
+            <div class="icon-img">⚙️</div>
+            <div>设置</div>
+        </div>
+    </div>
+
+    <!-- 开始菜单 -->
+    <div id="start-menu">
+        <h3 style="margin-bottom:10px;">应用列表</h3>
+        <div class="start-app-item" data-app="notepad">📝 记事本</div>
+        <div class="start-app-item" data-app="browser">🌐 Edge浏览器</div>
+        <div class="start-app-item" data-app="file">📁 文件管理器</div>
+        <div class="start-app-item" data-app="setting">⚙️ 设置</div>
+    </div>
+
+    <!-- 任务栏 -->
+    <div id="taskbar">
+        <div id="start-btn">⊞</div>
+        <div class="task-apps" id="taskApps"></div>
+        <div class="task-right">
+            <span id="timeBox">00:00</span>
+        </div>
+    </div>
+
+    <!-- 应用窗口容器 -->
+    <div id="windowsBox"></div>
+
+    <!-- 任务栏右键退出菜单 -->
+    <div class="context-menu" id="taskCtx">
+        <div class="ctx-item" id="ctxClose">强制退出应用</div>
+    </div>
+
+    <script>
+        // 全局变量
+        const windows = {};
+        let zIndexNum = 100;
+        let dragTarget = null;
+        let dragOffsetX = 0, dragOffsetY = 0;
+
+        // 应用配置
+        const appConfig = {
+            notepad: { title: "记事本", icon: "📝", width: 600, height: 400, html: `<textarea style="width:100%;height:100%;border:none;outline:none;font-size:14px;" placeholder="在此输入文字..."></textarea>` },
+            browser: { title: "Edge 浏览器", icon: "🌐", width: 1000, height: 600, html: `<div style="border:1px solid #ddd;padding:8px;border-radius:4px;margin-bottom:10px;">地址栏：仿系统内置浏览器</div><div>页面内容区域（模拟网页）</div>` },
+            file: { title: "文件资源管理器", icon: "📁", width: 850, height: 520, html: `<div style="display:grid;grid-template-columns:repeat(6,100px);gap:10px;"><div>文件夹1</div><div>文件夹2</div><div>文档.txt</div><div>图片.png</div></div>` },
+            setting: { title: "系统设置", icon: "⚙️", width: 700, height: 450, html: `<h3>Windows 设置</h3><p>系统、网络、个性化、账户等设置项</p>` }
+        };
+
+        // 更新右下角时间
+        function updateTime() {
+            const now = new Date();
+            const h = now.getHours().toString().padStart(2, "0");
+            const m = now.getMinutes().toString().padStart(2, "0");
+            document.getElementById("timeBox").innerText = `${h}:${m}`;
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // 切换开始菜单显示
+        document.getElementById("start-btn").onclick = () => {
+            const menu = document.getElementById("start-menu");
+            menu.style.display = menu.style.display === "block" ? "none" : "block";
+        };
+
+        // 点击空白处关闭开始菜单、右键菜单
+        document.body.onclick = (e) => {
+            document.getElementById("start-menu").style.display = "none";
+            document.getElementById("taskCtx").style.display = "none";
+        };
+
+        // 打开应用（桌面图标/开始菜单共用）
+        document.querySelectorAll(".desktop-icon, .start-app-item").forEach(el => {
+            el.onclick = (e) => {
+                e.stopPropagation();
+                const appId = el.dataset.app;
+                openApp(appId);
+            }
+        });
+
+        // 打开应用窗口
+        function openApp(appId) {
+            const cfg = appConfig[appId];
+            // 窗口已存在则激活
+            if (windows[appId]) {
+                focusWindow(appId);
+                return;
+            }
+            zIndexNum++;
+            // 创建窗口DOM
+            const win = document.createElement("div");
+            win.className = "window";
+            win.dataset.app = appId;
+            win.style.left = (50 + Object.keys(windows).length * 30) + "px";
+            win.style.top = (50 + Object.keys(windows).length * 30) + "px";
+            win.style.width = cfg.width + "px";
+            win.style.height = cfg.height + "px";
+            win.style.zIndex = zIndexNum;
+            win.style.display = "flex";
+            win.innerHTML = `
+                <div class="window-top">
+                    <span class="window-title">${cfg.icon} ${cfg.title}</span>
+                    <div class="window-controls">
+                        <div class="win-btn min">─</div>
+                        <div class="win-btn max">□</div>
+                        <!-- 关闭按钮禁用，应用保护 -->
+                        <div class="win-btn close">×</div>
+                    </div>
+                </div>
+                <div class="win-content">${cfg.html}</div>
+            `;
+            document.getElementById("windowsBox").appendChild(win);
+            windows[appId] = win;
+            createTaskItem(appId);
+            bindWindowEvent(win, appId);
+        }
+
+        // 创建任务栏图标
+        function createTaskItem(appId) {
+            const cfg = appConfig[appId];
+            const taskBox = document.getElementById("taskApps");
+            const task = document.createElement("div");
+            task.className = "task-item";
+            task.dataset.app = appId;
+            task.innerText = cfg.icon + " " + cfg.title;
+            // 左键点击切换最小化/激活
+            task.onclick = (e) => {
+                e.stopPropagation();
+                const win = windows[appId];
+                if (win.style.display === "none") {
+                    win.style.display = "flex";
+                    focusWindow(appId);
+                } else if (getActiveApp() === appId) {
+                    win.style.display = "none";
+                } else {
+                    focusWindow(appId);
+                }
+            };
+            // 右键弹出强制退出菜单
+            task.oncontextmenu = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const ctx = document.getElementById("taskCtx");
+                ctx.style.left = e.clientX + "px";
+                ctx.style.top = e.clientY + "px";
+                ctx.style.display = "block";
+                // 绑定退出按钮
+                document.getElementById("ctxClose").onclick = () => closeApp(appId);
+            };
+            taskBox.appendChild(task);
+            refreshTaskActive();
+        }
+
+        // 获取当前顶层窗口
+        function getActiveApp() {
+            let maxZ = 99;
+            let activeId = null;
+            Object.keys(windows).forEach(id => {
+                const z = parseInt(windows[id].style.zIndex);
+                if (z > maxZ && windows[id].style.display !== "none") {
+                    maxZ = z;
+                    activeId = id;
+                }
+            })
+            return activeId;
+        }
+
+        // 激活窗口置顶
+        function focusWindow(appId) {
+            zIndexNum++;
+            const win = windows[appId];
+            win.style.zIndex = zIndexNum;
+            win.style.display = "flex";
+            refreshTaskActive();
+        }
+
+        // 更新任务栏激活样式
+        function refreshTaskActive() {
+            const active = getActiveApp();
+            document.querySelectorAll(".task-item").forEach(item => {
+                if (item.dataset.app === active) item.classList.remove("inactive");
+                else item.classList.add("inactive");
+            })
+        }
+
+        // 关闭应用（仅右键菜单可执行）
+        function closeApp(appId) {
+            windows[appId].remove();
+            delete windows[appId];
+            // 删除任务栏图标
+            document.querySelectorAll(`.task-item[data-app="${appId}"]`).forEach(t => t.remove());
+            document.getElementById("taskCtx").style.display = "none";
+            refreshTaskActive();
+        }
+
+        // 绑定窗口拖拽、最小化、最大化
+        function bindWindowEvent(win, appId) {
+            const topBar = win.querySelector(".window-top");
+            const minBtn = win.querySelector(".min");
+            const maxBtn = win.querySelector(".max");
+
+            // 窗口点击置顶
+            win.onmousedown = () => focusWindow(appId);
+
+            // 拖拽窗口头部
+            topBar.onmousedown = (e) => {
+                dragTarget = win;
+                dragOffsetX = e.clientX - win.offsetLeft;
+                dragOffsetY = e.clientY - win.offsetTop;
+                focusWindow(appId);
+            };
+
+            // 最小化
+            minBtn.onclick = (e) => {
+                e.stopPropagation();
+                win.style.display = "none";
+                refreshTaskActive();
+            };
+
+            // 最大化/还原
+            let isMax = false;
+            let oldStyle = {};
+            maxBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (!isMax) {
+                    oldStyle = { left: win.style.left, top: win.style.top, width: win.style.width, height: win.style.height };
+                    win.style.left = "0px";
+                    win.style.top = "0px";
+                    win.style.width = "100%";
+                    win.style.height = "calc(100vh - 40px)";
+                    isMax = true;
+                } else {
+                    win.style.left = oldStyle.left;
+                    win.style.top = oldStyle.top;
+                    win.style.width = oldStyle.width;
+                    win.style.height = oldStyle.height;
+                    isMax = false;
+                }
+            };
+        }
+
+        // 全局拖拽移动
+        document.onmousemove = (e) => {
+            if (!dragTarget) return;
+            dragTarget.style.left = (e.clientX - dragOffsetX) + "px";
+            dragTarget.style.top = (e.clientY - dragOffsetY) + "px";
+        };
+        document.onmouseup = () => dragTarget = null;
+    </script>
+</body>
+</html>
