@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>iOS 完整版·全部可用（修正版）</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#111;display:flex;align-items:center;justify-content:center;height:100vh}
+  .phone{width:380px;height:750px;background:#000;border-radius:46px;position:relative;overflow:hidden}
+  .screen{width:100%;height:100%;background:#000;position:relative}
+  .wallpaper{position:absolute;inset:0;background:url(https://picsum.photos/id/1371/1080/1920) center/cover}
+/* 平板模式 */
+.phone.tablet {
+  width: 760px !important;
+  height: 580px !important;
+  border-radius: 20px !important;
+}
+.phone.tablet .home {
+  grid-template-columns: repeat(6, 1fr) !important;
+  gap: 20px !important;
+}
+
+  /* 锁屏 */
+  .lock{position:absolute;inset:0;z-index:900;color:#fff;text-align:center;padding-top:120px;background:url(https://picsum.photos/id/1371/1080/1920) center/cover;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding-bottom:60px}
+  .lock.hide{opacity:0;pointer-events:none}
+
+  /* 桌面 */
+  .home{position:relative;z-index:10;padding:100px 20px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .app{text-align:center;color:#fff}
+  .app .icon{width:60px;height:60px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px}
+  .app .name{font-size:12px;margin-top:6px}
+
+  /* 应用窗口 */
+  .app-window{position:absolute;inset:0;background:#fff;z-index:100;transform:translateX(100%);transition:transform .3s}
+  .app-window.show{transform:translateX(0)}
+  .back{position:absolute;top:60px;left:20px;color:#007aff;font-size:16px;background:none;border:none;z-index:101}
+  .title{padding:60px 20px 16px;background:#f8f8f8;font-size:24px;font-weight:bold}
+  .body{padding:20px;height:calc(100% - 120px);overflow-y:auto}
+
+  /* 状态栏 */
+  .status{position:absolute;top:12px;left:0;right:0;z-index:50;color:#fff;font-size:12px;padding:0 24px;display:flex;justify-content:space-between}
+
+  /* 开关 */
+  .toggle{width:50px;height:30px;background:#ccc;border-radius:15px;position:relative}
+  .toggle::after{content:'';position:absolute;width:26px;height:26px;background:#fff;border-radius:50%;top:2px;left:2px}
+  .toggle.on{background:#4cd964}
+  .toggle.on::after{left:22px}
+
+  input,button{user-select:auto}
+</style>
+</head>
+
+<body>
+<div class="phone">
+<div class="screen">
+  <div class="wallpaper"></div>
+
+  <!-- 状态栏 -->
+  <div class="status">
+    <span id="statusTime">15:30</span>
+    <div class="flex gap-2">
+      <i id="iconAirplane" class="fa fa-plane opacity-30"></i>
+      <i id="iconWifi" class="fa fa-wifi opacity-30"></i>
+      <i id="iconBluetooth" class="fa fa-bluetooth opacity-30"></i>
+      <i class="fa fa-battery-full"></i>
+    </div>
+  </div>
+
+  <!-- 桌面 -->
+  <div class="home">
+    <div class="app" onclick="openApp('phone')">
+      <div class="icon bg-white text-black"><i class="fa fa-phone"></i></div>
+      <div class="name">电话</div>
+    </div>
+    <div class="app" onclick="openApp('msg')">
+      <div class="icon bg-blue-500"><i class="fa fa-comment"></i></div>
+      <div class="name">信息</div>
+    </div>
+    <div class="app" onclick="openApp('camera')">
+      <div class="icon bg-green-500"><i class="fa fa-camera"></i></div>
+      <div class="name">相机</div>
+    </div>
+    <div class="app" onclick="openApp('set')">
+      <div class="icon bg-gray-500"><i class="fa fa-cog"></i></div>
+      <div class="name">设置</div>
+    </div>
+
+    <div class="app" onclick="openApp('record')">
+      <div class="icon bg-yellow-500"><i class="fa fa-book"></i></div>
+      <div class="name">保存记录</div>
+    </div>
+    <div class="app" onclick="openApp('map')">
+      <div class="icon bg-teal-500"><i class="fa fa-map-marker"></i></div>
+      <div class="name">地图</div>
+    </div>
+    <div class="app" onclick="openApp('store')">
+      <div class="icon bg-red-500"><i class="fa fa-shopping-bag"></i></div>
+      <div class="name">商店</div>
+    </div>
+    <div class="app" onclick="openApp('wallet')">
+      <div class="icon bg-indigo-500"><i class="fa fa-credit-card"></i></div>
+      <div class="name">钱包</div>
+    </div>
+
+    <div class="app" onclick="openApp('weather')">
+      <div class="icon bg-blue-400"><i class="fa fa-cloud"></i></div>
+      <div class="name">天气</div>
+    </div>
+    <div class="app" onclick="openApp('snake')">
+      <div class="icon bg-green-600"><i class="fa fa-gamepad"></i></div>
+      <div class="name">贪吃蛇</div>
+    </div>
+    <div class="app" onclick="openApp('browser')">
+      <div class="icon bg-white text-black"><i class="fa fa-chrome"></i></div>
+      <div class="name">浏览器</div>
+    </div>
+    <div class="app" onclick="openApp('photos')">
+      <div class="icon bg-purple-500"><i class="fa fa-picture-o"></i></div>
+      <div class="name">照片</div>
+    </div>
+
+    <div class="app" onclick="openApp('doubao')">
+      <div class="icon bg-blue-600"><i class="fa fa-comment-o"></i></div>
+      <div class="name">豆包</div>
+    </div>
+    <div class="app" onclick="openApp('account')">
+      <div class="icon bg-orange-500"><i class="fa fa-user"></i></div>
+      <div class="name">账户</div>
+    </div>
+  </div>
+
+  <!-- 电话 -->
+  <div id="phone" class="app-window">
+    <button class="back" onclick="closeApp()">← 返回</button>
+    <div class="title">电话</div>
+    <div class="body">
+      <button onclick="openAddContact()" class="bg-blue-500 text-white p-2 rounded w-full mb-4">添加联系人</button>
+      <div id="contactList"></div>
+    </div>
+  </div>
+  <div id="addContact" class="app-window">
+    <button class="back" onclick="openApp('phone')">← 返回</button>
+    <div class="title">新建联系人</div>
+    <div class="body space-y-4">
+      <input id="newName" class="w-full border-b py-2 outline-none" placeholder="输入姓名">
+      <button onclick="saveContact()" class="bg-blue-500 text-white p-2 rounded w-full">保存</button>
+    </div>
+  </div>
+  <div id="callWindow" class="app-window bg-black text-white flex flex-col items-center justify-center">
+    <div class="text-3xl mb-6" id="callName">正在呼叫...</div>
+    <button onclick="endCall()" class="w-20 h-20 rounded-full bg-red-500 flex items-center justify-center">
+      <i class="fa fa-phone text-2xl"></i>
+    </button>
+  </div>
+
+  <!-- 信息 -->
+  <div id="msg" class="app-window">
+    <button class="back" onclick="closeApp()">← 返回</button>
+    <div class="title">信息</div>
+    <div class="body">
+      <div class="p-3 border-b" onclick="openChat()">联系人</div>
+    </div>
+  </div>
+  <div id="chat" class="app-window">
+    <button class="back" onclick="closeApp()">← 返回</button>
+    <div class="title text-center text-lg">联系人</div>
+    <div class="body flex flex-col gap-2" id="chatBox"></div>
+    <div class="absolute bottom-0 left-0 w-full h-16 bg-white border-t flex items-center px-4 gap-2">
+      <input id="msgInput" class="flex-1 h-10 px-4 bg-gray-100 rounded-full outline-none text-sm" placeholder="输入消息">
+      <button onclick="sendMsg()" class="w-20 h-10 bg-blue-500 text-white rounded-full">发送</button>
+    </div>
+  </div>
+
+  <!-- 相机 -->
+  <div id="camera" class="app-window">
+    <button class="back text-white" onclick="closeApp()">← 返回</button>
+    <div class="w-full h-full bg-black flex flex-col">
+      <div class="flex-1 bg-gray-800 flex items-center justify-center">
+        <i class="fa fa-camera text-white text-5xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- 设置 -->
+  <div id="set" class="app-window">
+    <button class="back" onclick="closeApp()">← 返回</button>
+    <div class="title">设置</div>
+    <div class="body space-y-6">
+      <div class="flex justify-between items-center">
+        <span>飞行模式</span>
+        <div id="toggleAirplane" class="toggle" onclick="setAirplane()"></div>
+      </div>
+      <div class="flex justify-between items-center">
+        <span>Wi‑Fi</span>
+        <div id="toggleWifi" class="toggle" onclick="setWifi()"></div>
+      </div>
+      <div class="flex justify-between items-center">
+        <span>蓝牙</span>
+        <div id="toggleBluetooth" class="toggle" onclick="setBluetooth()"></div>
+      </div>
+      <div>
+        <div class="font-semibold">钱包余额</div>
+        <input id="setMoney" type="number" class="w-full border rounded p-2 mt-1">
+        <button onclick="setMoney()" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded">保存</button>
+      </div>
+      <div>
+        <div class="font-semibold">天气</div>
+        <input id="setCity" class="w-full border rounded p-1 mt-1" placeholder="城市">
+        <input id="setTemp" class="w-full border rounded p-1 mt-1" placeholder="温度">
+        <input id="setDesc" class="w-full border rounded p-1 mt-1" placeholder="描述">
+        <button onclick="setWeather()" class="mt-2 bg-blue-500 text-white px-3 py-1 rounded">保存</button>
+      </div>
+      <button onclick="clearData()" class="bg-red-500 text-white p-2 rounded w-full">清除所有数据</button>
+    </div>
+  </div>
+
+  <!-- 保存记录 -->
+  <div id="record" class="app-window">
+    <button class="back" onclick="closeApp()">← 返回</button>
+    <div class="title">保存记录</div>
+    <div class="body" id="recordList"></div>
+  </div>
+
+  <!-- 地图 -->
+  <div id="map" class="app-window">
+    <button class="back" onclick="closeApp()">← 返回</button>
+    <div class="title">地图</div>
+    <iframe src="https://ditu.amap.com" width="100%" height="100%" frameborder="0"></iframe>
+  </div>
+
+  <!-- 商店 -->
+  <div id="store" class="app-window">
+    <button class="back" onclick="closeApp()">← 返回</button>
+    <div class="title">商店</div>
+    <div class="body">
+      <div class="text-green-600 font-bold mb-2">余额：<span id="storeMoney"></span></div>
+      <div id="goodsList" class="space-y-2"></div>
+      <button onclick="addGoods()" class="mt-4 bg-blue-500 text-white p-2 rounded w-full">添加商品</button>
+    </div>
+  </div>
+  <div id="addGoods" class="app-window">
+    <button class="back" onclick="openApp('store')">← 返回</button>
+    <div class="title">新增商品</div>
+    <div class="body space-y-2">
+      <input id="gName" class="w-full border rounded p-2" placeholder="商品名">
+      <input id="gPrice" type="number" class="w-full border rounded p-2" placeholder="价格">
+      <button onclick="saveGoods()" class="bg-blue-500 text-white p-2 rounded w-full">保存</button>
+    </div>
+  </div>
+
+  <!-- 钱包 -->
+  <div id="wallet" class="app-window">
+    <button class="back" onclick="closeApp()">← 返回</button>
+    <div class="title">钱包</div>
+    <div class="body text-center pt-10">
+      <div class="text-4xl font-bold">¥ <span id="walletMoney"></span></div>
+      <div class="mt-4 text-gray-500">等级：<span id="vipLevel"></span></div>
+    </div>
+  </div>
+
+  <!-- 天气 -->
+  <div id="weather" class="app-window">
+    <button class="back" onclick="closeApp()">← 返回</button>
+    <div class="title">天气</div>
+    <div class="body text-center pt-10">
+      <div id="wCity" class="text-xl"></div>
+      <div id="wTemp" class="text-5xl font-bold my-4"></div>
+      <div id="wDesc" class="text-lg text-gray-500"></div>
+    </div>
+  </div>
+
+  <!-- 贪吃蛇 -->
+  <div id="snake" class="app-window">
+    <button class="back" onclick="closeApp();stopSnake()">← 返回</button>
+    <div class="title">贪吃蛇</div>
+    <div class="body bg-black flex justify-center items-center p-0">
+      <canvas id="snakeCanvas" width="320" height="400" style="background:#000"></canvas>
+    </div>
+  </div>
+
+  <!-- 浏览器 -->
+  <div id="browser" class="app-window">
+    <button class="back" onclick="closeApp()">← 返回</button>
+    <div class="title">浏览器</div>
+    <div class="p-2 flex gap-2">
+      <input id="url" class="flex-1 border rounded p-2" value="https://www.baidu.com">
+      <button onclick="go()" class="bg-blue-500 text-white px-3 rounded">前往</button>
+    </div>
+    <iframe id="frame" width="100%" height="calc(100% - 70px)" frameborder="0"></iframe>
+  </div>
+
+  <!-- 照片 -->
+  <div id="photos" class="app-window">
+    <button class="back" onclick="closeApp()">← 返回</button>
+    <div class="title">照片</div>
+    <div class="body p-1 grid grid-cols-3 gap-1">
+      <img src="https://picsum.photos/300/300?1" class="w-full h-24 object-cover" alt="">
+      <img src="https://picsum.photos/300/300?2" class="w-full h-24 object-cover" alt="">
+      <img src="https://picsum.photos/300/300?3" class="w-full h-24 object-cover" alt="">
+      <img src="https://picsum.photos/300/300?4" class="w-full h-24 object-cover" alt="">
+      <img src="https://picsum.photos/300/300?5" class="w-full h-24 object-cover" alt="">
+      <img src="https://picsum.photos/300/300?6" class="w-full h-24 object-cover" alt="">
+    </div>
+  </div>
+
+  <!-- 豆包 -->
+  <div id="doubao" class="app-window">
+    <button class="back" onclick="closeApp()">← 返回</button>
+    <div class="title text-center">豆包</div>
+    <div class="body flex flex-col gap-2" id="dbChat"></div>
+    <div class="absolute bottom-0 left-0 w-full h-16 bg-white border-t flex items-center px-4 gap-2">
+      <input id="dbInput" class="flex-1 h-10 px-4 bg-gray-100 rounded-full outline-none text-sm" placeholder="和豆包聊天">
+      <button onclick="sendDB()" class="w-20 h-10 bg-blue-500 text-white rounded-full">发送</button>
+    </div>
+  </div>
+
+  <!-- 账户 -->
+  <div id="account" class="app-window">
+    <button class="back" onclick="closeApp()">← 返回</button>
+    <div class="title">账户</div>
+    <div class="body space-y-4">
+      <div>当前：<span id="nowUser"></span></div>
+      <input id="userName" class="w-full border rounded p-2" placeholder="用户名">
+      <input id="userPwd" type="password" class="w-full border rounded p-2" placeholder="密码">
+      <button onclick="login()" class="bg-blue-500 text-white p-2 rounded w-full">登录</button>
+    </div>
+  </div>
+
+  <!-- 锁屏 -->
+  <div class="lock" id="lock" onclick="unlock()">
+    <div>
+      <div style="font-size:60px">15:30</div>
+      <div style="margin-top:10px">星期三 3月3日</div>
+    </div>
+    <div style="opacity:.7">点击解锁</div>
+  </div>
+</div>
+</div>
+
+<script>
+// ===== 初始默认状态 =====
+let airplane = false
+let wifi = false
+let bluetooth = false
+let contacts = ["老王","妈妈"]
+let records = []
+let money = 1000
+let goods = [{name:"矿泉水",price:2},{name:"面包",price:5},{name:"手机",price:3999}]
+let weather = {city:"苏州",temp:"18",desc:"多云"}
+let user = {name:"管理员"}
+
+// 本地存储键
+const STORAGE_KEY = 'sim_state_v1'
+
+// ===== 持久化 =====
+function saveState(){
+  try{
+    const state = {airplane,wifi,bluetooth,contacts,records,money,goods,weather,user}
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  }catch(e){
+    console.warn('保存状态失败', e)
+  }
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if(!raw) return
+    const s = JSON.parse(raw)
+    if(typeof s.airplane === 'boolean') airplane = s.airplane
+    if(typeof s.wifi === 'boolean') wifi = s.wifi
+    if(typeof s.bluetooth === 'boolean') bluetooth = s.bluetooth
+    if(Array.isArray(s.contacts)) contacts = s.contacts
+    if(Array.isArray(s.records)) records = s.records
+    if(typeof s.money === 'number') money = s.money
+    if(Array.isArray(s.goods)) goods = s.goods
+    if(typeof s.weather === 'object') weather = s.weather
+    if(typeof s.user === 'object') user = s.user
+  }catch(e){
+    console.warn('读取状态失败', e)
+  }
+}
+
+// ===== 解锁 =====
+function unlock(){
+  document.getElementById('lock').classList.add('hide')
+}
+
+// ===== 应用窗口控制 =====
+function openApp(id){
+  closeApp()
+  const el = document.getElementById(id)
+  if(el) el.classList.add('show')
+  if(id==='phone')renderContacts()
+  if(id==='record')renderRecords()
+  if(id==='store')renderStore()
+  if(id==='wallet')renderWallet()
+  if(id==='weather')renderWeather()
+  if(id==='account')renderUser()
+  if(id==='snake')startSnake()
+}
+function closeApp(){
+  document.querySelectorAll('.app-window').forEach(el=>el.classList.remove('show'))
+}
+
+// ===== 状态栏同步 =====
+function syncStatus(){
+  document.getElementById('iconAirplane').style.opacity = airplane?1:0.3
+  document.getElementById('iconWifi').style.opacity = wifi?1:0.3
+  document.getElementById('iconBluetooth').style.opacity = bluetooth?1:0.3
+  document.getElementById('toggleAirplane').classList.toggle('on',airplane)
+  document.getElementById('toggleWifi').classList.toggle('on',wifi)
+  document.getElementById('toggleBluetooth').classList.toggle('on',bluetooth)
+}
+
+// ===== 设置开关（操作后持久化） =====
+function setAirplane(){airplane=!airplane;syncStatus();saveState()}
+function setWifi(){wifi=!wifi;syncStatus();saveState()}
+function setBluetooth(){bluetooth=!bluetooth;syncStatus();saveState()}
+
+// ===== 电话（安全渲染联系人） =====
+function renderContacts(){
+  const list = document.getElementById('contactList')
+  list.innerHTML = ''
+  contacts.forEach(name=>{
+    const d = document.createElement('div')
+    d.className = 'p-3 border-b flex justify-between items-center'
+    const span = document.createElement('span')
+    span.textContent = name
+    const btn = document.createElement('button')
+    btn.className = 'text-blue-500'
+    btn.textContent = '拨打'
+    btn.addEventListener('click', ()=> makeCall(name))
+    d.appendChild(span)
+    d.appendChild(btn)
+    list.appendChild(d)
+  })
+}
+function openAddContact(){openApp('addContact')}
+function saveContact(){
+  const input = document.getElementById('newName')
+  const n = input.value.trim()
+  if(n && !contacts.includes(n)){
+    contacts.push(n)
+    addRecord("添加联系人："+n)
+    saveState()
+  }
+  input.value = ''
+  openApp('phone')
+}
+function makeCall(name){
+  closeApp()
+  document.getElementById('callWindow').classList.add('show')
+  document.getElementById('callName').innerText = name
+  addRecord("正在拨打："+name)
+}
+function endCall(){
+  closeApp()
+  addRecord("通话结束")
+}
+
+// ===== 信息 =====
+function openChat(){
+  closeApp()
+  document.getElementById('chat').classList.add('show')
+}
+function sendMsg(){
+  const i = document.getElementById('msgInput')
+  const c = document.getElementById('chatBox')
+  const t = i.value.trim()
+  if(!t)return
+  const m = document.createElement('div')
+  m.className = 'p-2 bg-blue-500 text-white rounded-lg self-end'
+  m.innerText = t
+  c.appendChild(m)
+  addRecord("发送："+t)
+  i.value=''
+  c.scrollTop = c.scrollHeight
+
+  // 自动回复你好
+  if(t.includes('你好')){
+    setTimeout(()=>{
+      const r = document.createElement('div')
+      r.className = 'p-2 bg-gray-200 rounded-lg self-start'
+      r.innerText = '你好'
+      c.appendChild(r)
+      c.scrollTop = c.scrollHeight
+    },800)
+  }
+}
+
+// ===== 记录 =====
+function addRecord(t){
+  records.unshift(`[${new Date().toLocaleTimeString()}] ${t}`)
+  renderRecords()
+  saveState()
+}
+function renderRecords(){
+  const l = document.getElementById('recordList')
+  l.innerHTML = ''
+  records.forEach(t=>{
+    const d = document.createElement('div')
+    d.className = 'p-2 border-b text-sm'
+    d.textContent = t
+    l.appendChild(d)
+  })
+}
+
+// ===== 商店（安全渲染） =====
+function renderStore(){
+  document.getElementById('storeMoney').innerText = money
+  const g = document.getElementById('goodsList')
+  g.innerHTML = ''
+  goods.forEach((it,idx)=>{
+    const d = document.createElement('div')
+    d.className = 'p-2 border-b flex justify-between items-center'
+    const info = document.createElement('div')
+    info.textContent = `${it.name} ¥${it.price}`
+    const btn = document.createElement('button')
+    btn.className = 'bg-blue-500 text-white px-2 rounded'
+    btn.textContent = '购买'
+    btn.addEventListener('click', ()=> buy(idx))
+    d.appendChild(info)
+    d.appendChild(btn)
+    g.appendChild(d)
+  })
+}
+function addGoods(){openApp('addGoods')}
+function saveGoods(){
+  const nEl = document.getElementById('gName')
+  const pEl = document.getElementById('gPrice')
+  const n = nEl.value.trim()
+  const p = pEl.value
+  const price = Number(p)
+  if(n && !isNaN(price) && price > 0){
+    goods.push({name:n,price:price})
+    addRecord("新增商品："+n)
+    saveState()
+  }
+  nEl.value = ''
+  pEl.value = ''
+  openApp('store')
+}
+function buy(idx){
+  const g = goods[idx]
+  if(money < g.price){ alert('余额不足'); return }
+  money -= g.price
+  addRecord("购买："+g.name)
+  saveState()
+  renderStore()
+  renderWallet()
+}
+
+// ===== 钱包 =====
+function renderWallet(){
+  document.getElementById('walletMoney').innerText = money
+  document.getElementById('vipLevel').innerText = money>=10000?"VIP":"普通"
+}
+function setMoney(){
+  const v = document.getElementById('setMoney').value
+  // 只判断空字符串，允许输入 0
+  if (v !== ''){
+    money = Number(v)
+    renderWallet()
+    addRecord("修改余额："+v)
+    saveState()
+  }
+}
+
+// ===== 天气 =====
+function renderWeather(){
+  document.getElementById('wCity').innerText=weather.city
+  document.getElementById('wTemp').innerText=weather.temp+"℃"
+  document.getElementById('wDesc').innerText=weather.desc
+}
+function setWeather(){
+  const city = document.getElementById('setCity').value
+  const temp = document.getElementById('setTemp').value
+  const desc = document.getElementById('setDesc').value
+  // 仅在输入非空时更新（允许 0 作为温度）
+  if (city !== '') weather.city = city
+  if (temp !== '') weather.temp = temp
+  if (desc !== '') weather.desc = desc
+  addRecord("修改天气")
+  saveState()
+  renderWeather()
+}
+
+// ===== 清除数据 =====
+function clearData(){
+  localStorage.removeItem(STORAGE_KEY)
+  contacts = ["老王","妈妈"]
+  records = []
+  money = 1000
+  goods = [{name:"矿泉水",price:2},{name:"面包",price:5},{name:"手机",price:3999}]
+  weather = {city:"苏州",temp:"18",desc:"多云"}
+  airplane = wifi = bluetooth = false
+  syncStatus()
+  renderAll()
+  addRecord("已重置数据")
+  saveState()
+}
+
+// ===== 浏览器 =====
+function go(){document.getElementById('frame').src=document.getElementById('url').value}
+
+// ===== 豆包 =====
+function sendDB(){
+  const i=document.getElementById('dbInput'),c=document.getElementById('dbChat')
+  if(!i.value)return
+  const m=document.createElement('div')
+  m.className='p-2 bg-blue-500 text-white rounded-lg self-end'
+  m.innerText=i.value;c.appendChild(m);i.value='';c.scrollTop=c.scrollHeight
+}
+
+// ===== 账户 =====
+function renderUser(){document.getElementById('nowUser').innerText=user.name}
+function login(){
+  const n=document.getElementById('userName').value.trim()
+  const p=document.getElementById('userPwd')
+  if(n){
+    user.name=n;renderUser();addRecord("切换用户："+n);saveState()
+  }
+  // 清除密码输入
+  p.value = ''
+}
+
+// ===== 贪吃蛇（简单实现） =====
+let snakeInt
+function startSnake(){
+  const canvas=document.getElementById('snakeCanvas'),ctx=canvas.getContext('2d')
+  let snake=[{x:10,y:10}],dir={x:1,y:0},food={x:15,y:15}
+  clearInterval(snakeInt)
+  snakeInt=setInterval(()=>{
+    ctx.fillStyle='#000';ctx.fillRect(0,0,canvas.width,canvas.height)
+    const head={x:snake[0].x+dir.x,y:snake[0].y+dir.y};snake.unshift(head)
+    if(head.x===food.x&&head.y===food.y)food={x:Math.random()*20|0,y:Math.random()*20|0}
+    else snake.pop()
+    ctx.fillStyle='#0f0';snake.forEach(p=>ctx.fillRect(p.x*16,p.y*16,14,14))
+    ctx.fillStyle='#f00';ctx.fillRect(food.x*16,food.y*16,14,14)
+  },150)
+  canvas.onclick=e=>{
+    const rect=canvas.getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top
+    const cx=rect.width/2,cy=rect.height/2
+    if(Math.abs(x-cx)>Math.abs(y-cy))dir=x>cx?{x:1,y:0}:{x:-1,y:0}
+    else dir=y>cy?{x:0,y:1}:{x:0,y:-1}
+  }
+}
+function stopSnake(){clearInterval(snakeInt)}
+
+// ===== 渲染全部 =====
+function renderAll(){
+  renderContacts();renderRecords();renderStore();renderWallet();renderWeather();renderUser();syncStatus()
+}
+
+// ===== 启动时加载状态并渲染 =====
+loadState()
+renderAll()
+</script>
+</body>
+</html>
